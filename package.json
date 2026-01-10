@@ -2,7 +2,7 @@
   "name": "yours-truely-email",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/lambda/contact/index.js",
   "scripts": {
     "build": "tsc",
     "prettier": "prettier --write .",

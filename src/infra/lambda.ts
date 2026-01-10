@@ -35,7 +35,7 @@ new aws.iam.RolePolicy('contact-form-lambda-policy', {
 // 3. Lambda Function
 export const contactFormLambda = new aws.lambda.Function('contact-form-handler', {
   code: new pulumi.asset.AssetArchive({
-    '.': new pulumi.asset.FileArchive('../dist'), // Assumes build step is run
+    '.': new pulumi.asset.FileArchive('../../dist/lambda/contact'), // Assumes build step is run
   }),
   runtime: aws.lambda.Runtime.NodeJS20dX,
   handler: 'index.handler',
