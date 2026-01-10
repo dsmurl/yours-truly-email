@@ -1,7 +1,16 @@
 {
-  "semi": true,
-  "trailingComma": "all",
-  "singleQuote": true,
-  "printWidth": 100,
-  "tabWidth": 2
+  "requirePragma": true,
+  "overrides": [
+    {
+      "files": ["src/**/*", "infra/**/*", "doc/**/*"],
+      "options": {
+        "requirePragma": false,
+        "semi": true,
+        "trailingComma": "all",
+        "singleQuote": true,
+        "printWidth": 100,
+        "tabWidth": 2
+      }
+    }
+  ]
 }

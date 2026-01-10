@@ -1,13 +1,71 @@
-/tmp
-/out-tsc
-
-/node_modules
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-/.pnp
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+.pnp/
 .pnp.js
 
+# Build output (any app)
+dist/
+dist-ssr/
+build/
+out/
+
+# Caches and temp
+.vite/
+.nx/
+.cache/
+.tmp/
+tmp/
+temp/
+.eslintcache
+*.tsbuildinfo
+coverage/
+
+# PNPM local store (when configured per-project)
+.pnpm-store/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Editor / OS
 .vscode/*
+!.vscode/extensions.json
+.idea/
 .DS_Store
-.idea
+Thumbs.db
+.history/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local Prisma data directory (SQLite for dev)
+libs/prisma/prisma/data/
+!libs/prisma/prisma/data/.gitkeep
+
+# SQLite databases (dev/local artifacts)
+# Ignore DB files anywhere in the repo, including libs/drizzle/local.sqlite and any app-level copies.
+*.sqlite
+*.sqlite3
+*.db
+**/local.sqlite
+
+# SQLite write-ahead log and shared memory files
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+
+# ai output
+.output.txt

@@ -187,7 +187,7 @@ Attach Web ACL to API Gateway stage with rules:
 ## Pulumi Project Structure
 
 ```text
-/infrastructure
+/infra
 ├── index.ts        # Main stack file (orchestrates resources)
 ├── api.ts          # API Gateway and WAF resources
 ├── lambda.ts       # Lambda and IAM resources

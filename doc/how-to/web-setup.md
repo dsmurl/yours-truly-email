@@ -10,12 +10,14 @@ This guide explains how to integrate your external static website with the Secur
 
 ## 2. Including AWS WAF CAPTCHA
 
-To interact with a WAF-protected endpoint, your frontend needs to handle the CAPTCHA token. AWS WAF provides a JavaScript SDK that handles this.
+To interact with a WAF-protected endpoint, your frontend needs to handle the CAPTCHA token. AWS WAF provides a
+JavaScript SDK that handles this.
 
 ### How it works for the user:
 
 - **Challenge mode**: AWS WAF can automatically determine if a challenge is needed.
-- **Popup/Overlay**: If a CAPTCHA is required, the SDK will automatically display an overlay on your website with the CAPTCHA puzzle. Once the user solves it, the overlay disappears, and the SDK provides a token.
+- **Popup/Overlay**: If a CAPTCHA is required, the SDK will automatically display an overlay on your website with the
+  CAPTCHA puzzle. Once the user solves it, the overlay disappears, and the SDK provides a token.
 
 Add the following script to your HTML:
 
@@ -25,7 +27,8 @@ Add the following script to your HTML:
 
 ## 3. Implementation Example (JavaScript)
 
-The following example demonstrates how to collect form data, obtain a WAF token (which may trigger a popup), and send the request.
+The following example demonstrates how to collect form data, obtain a WAF token (which may trigger a popup), and send
+the request.
 
 ```javascript
 async function submitContactForm() {
@@ -71,13 +74,17 @@ async function submitContactForm() {
 
 ## 4. Anti-Abuse Best Practices for Frontend
 
-- **Honeypot Field**: Include a visually hidden input field. Bots will likely fill it, causing the backend to silently discard the request.
+- **Honeypot Field**: Include a visually hidden input field. Bots will likely fill it, causing the backend to silently
+  discard the request.
   ```html
   <input type="text" name="_honeypot" style="display:none" tabindex="-1" autocomplete="off" />
   ```
-- **Button Debouncing**: Disable the submit button immediately after clicking to prevent multiple submissions during the "loading" state.
-- **HTTPS Only**: Ensure your static site is also hosted on HTTPS to avoid "Mixed Content" warnings when calling the API.
+- **Button Debouncing**: Disable the submit button immediately after clicking to prevent multiple submissions during
+  the "loading" state.
+- **HTTPS Only**: Ensure your static site is also hosted on HTTPS to avoid "Mixed Content" warnings when calling the
+  API.
 
 ## 5. CORS Considerations
 
-Ensure the domain where your website is hosted (e.g., `https://www.yourdomain.com`) is added to the `Allowed Origins` in the API Gateway / Pulumi configuration. Browser-based requests will fail without this.
+Ensure the domain where your website is hosted (e.g., `https://www.yourdomain.com`) is added to the `Allowed Origins` in
+the API Gateway / Pulumi configuration. Browser-based requests will fail without this.
