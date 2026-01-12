@@ -14,7 +14,7 @@
         "iam:PassRole",
         "iam:TagRole"
       ],
-      "Resource": "arn:aws:iam::*:role/contact-form-lambda-role*"
+      "Resource": "arn:aws:iam::*:role/*your-truely-email-lambda-role*"
     },
     {
       "Sid": "LambdaManagement",
@@ -31,7 +31,7 @@
         "lambda:ListTags",
         "lambda:TagResource"
       ],
-      "Resource": "arn:aws:lambda:*:*:function:contact-form-handler*"
+      "Resource": "arn:aws:lambda:*:*:function:*your-truely-email-request-handler*"
     },
     {
       "Sid": "APIGatewayManagement",
@@ -84,7 +84,7 @@
         "logs:PutRetentionPolicy",
         "logs:ListTagsLogGroup"
       ],
-      "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/contact-form-handler*"
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/*your-truely-email-request-handler*"
     }
   ]
 }

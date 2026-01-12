@@ -13,7 +13,7 @@
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies"
       ],
-      "Resource": "arn:aws:iam::*:role/contact-form-lambda-role*"
+      "Resource": "arn:aws:iam::*:role/*your-truely-email-lambda-role*"
     },
     {
       "Sid": "LambdaCleanup",
@@ -25,7 +25,7 @@
         "lambda:GetPolicy",
         "lambda:ListTags"
       ],
-      "Resource": "arn:aws:lambda:*:*:function:contact-form-handler*"
+      "Resource": "arn:aws:lambda:*:*:function:*your-truely-email-request-handler*"
     },
     {
       "Sid": "APIGatewayCleanup",
@@ -54,7 +54,7 @@
       "Sid": "CloudWatchLogsCleanup",
       "Effect": "Allow",
       "Action": ["logs:DeleteLogGroup", "logs:DescribeLogGroups"],
-      "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/contact-form-handler*"
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/*your-truely-email-request-handler*"
     }
   ]
 }

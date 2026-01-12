@@ -33,7 +33,7 @@ new aws.iam.RolePolicy(config.prefixName('lambda-policy'), {
 });
 
 // 3. Lambda Function
-export const contactFormLambda = new aws.lambda.Function(config.prefixName('handler'), {
+export const contactFormLambda = new aws.lambda.Function(config.prefixName('request-handler'), {
   code: new pulumi.asset.AssetArchive({
     '.': new pulumi.asset.FileArchive('../../dist/lambda/contact'), // Assumes build step is run
   }),
