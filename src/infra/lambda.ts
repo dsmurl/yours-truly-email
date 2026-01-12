@@ -3,12 +3,12 @@ import * as pulumi from '@pulumi/pulumi';
 import * as config from './config';
 
 // 1. Lambda Role
-const lambdaRole = new aws.iam.Role('contact-form-lambda-role', {
+const lambdaRole = new aws.iam.Role(config.prefixName('lambda-role'), {
   assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({ Service: 'lambda.amazonaws.com' }),
 });
 
 // 2. IAM Policies
-new aws.iam.RolePolicy('contact-form-lambda-policy', {
+new aws.iam.RolePolicy(config.prefixName('lambda-policy'), {
   role: lambdaRole.id,
   policy: {
     Version: '2012-10-17',
@@ -33,7 +33,7 @@ new aws.iam.RolePolicy('contact-form-lambda-policy', {
 });
 
 // 3. Lambda Function
-export const contactFormLambda = new aws.lambda.Function('contact-form-handler', {
+export const contactFormLambda = new aws.lambda.Function(config.prefixName('handler'), {
   code: new pulumi.asset.AssetArchive({
     '.': new pulumi.asset.FileArchive('../../dist/lambda/contact'), // Assumes build step is run
   }),

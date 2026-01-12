@@ -1,0 +1,4 @@
+name: yours-truely-email
+runtime: nodejs
+main: ../../dist/infra/index.js
+description: Secure Serverless Contact Form Infrastructure

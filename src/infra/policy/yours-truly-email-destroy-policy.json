@@ -1,0 +1,60 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "IAMCleanup",
+      "Effect": "Allow",
+      "Action": [
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:DeleteRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": "arn:aws:iam::*:role/contact-form-lambda-role*"
+    },
+    {
+      "Sid": "LambdaCleanup",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:DeleteFunction",
+        "lambda:GetFunction",
+        "lambda:RemovePermission",
+        "lambda:GetPolicy",
+        "lambda:ListTags"
+      ],
+      "Resource": "arn:aws:lambda:*:*:function:contact-form-handler*"
+    },
+    {
+      "Sid": "APIGatewayCleanup",
+      "Effect": "Allow",
+      "Action": ["apigateway:GET", "apigateway:DELETE"],
+      "Resource": ["arn:aws:apigateway:*::/apis", "arn:aws:apigateway:*::/apis/*"]
+    },
+    {
+      "Sid": "WAFv2Cleanup",
+      "Effect": "Allow",
+      "Action": [
+        "wafv2:DeleteWebACL",
+        "wafv2:GetWebACL",
+        "wafv2:DisassociateWebACL",
+        "wafv2:ListResourcesForWebACL"
+      ],
+      "Resource": ["arn:aws:wafv2:*:*:regional/webacl/*/*"]
+    },
+    {
+      "Sid": "SESCleanup",
+      "Effect": "Allow",
+      "Action": ["ses:DeleteEmailIdentity", "ses:GetEmailIdentity", "ses:ListEmailIdentities"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogsCleanup",
+      "Effect": "Allow",
+      "Action": ["logs:DeleteLogGroup", "logs:DescribeLogGroups"],
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/lambda/contact-form-handler*"
+    }
+  ]
+}

@@ -26,8 +26,10 @@ The IAM user or role executing the deployment must have sufficient permissions t
 
 ### Deployment Policy
 
-A specific IAM policy for the deployment user/role is provided in `infra/policy/yours-truly-email-deploy-policy.json`.
+A specific IAM policy called `yours-truely-email-creator-policy` for the deployment user/role is provided in `infra/policy/yours-truly-email-deploy-policy.json`.
 You can create a custom policy in the AWS Console using this JSON to grant the exact permissions needed.
+
+If you need to tear down the infrastructure, a corresponding destroy policy is provided in `infra/policy/yours-truly-email-destroy-policy.json`. This policy grants the minimum permissions required to delete the resources created by this project.
 
 If you are using an IAM Role (recommended for CI/CD or cross-account deployment), you must also configure a **Trust
 Policy** to allow your user or service to assume that role. A template is provided in `infra/policy/trust-policy.json`.
@@ -57,51 +59,44 @@ If you prefer to manage permissions manually, ensure the role covers:
    ```
 
 2. **Initialize Pulumi Stack**:
-   Navigate to the `infra` directory and create a new stack (e.g., `dev`):
+   Navigate to the `src/infra` directory and create a new stack (e.g., `dev`):
    ```bash
-   cd infra
+   cd src/infra
    pulumi stack init dev
    ```
 
 ## 4. Configuration
 
-The project requires several configuration values. Set these using the `pulumi config` command from the `infra`
-directory.
+The project requires several configuration values. Use the **`.env`** file to manage these settings.
 
-| Key                | Description                                                   | Example                          |
-| :----------------- | :------------------------------------------------------------ | :------------------------------- |
-| `sourceEmail`      | The verified email address that sends the email.              | `noreply@yourdomain.com`         |
-| `destinationEmail` | The email address where you want to receive form submissions. | `yourname@gmail.com`             |
-| `allowedOrigins`   | A JSON array of origins allowed to call the API (CORS).       | `["https://www.yourdomain.com"]` |
-
-### Command Examples:
-
-```bash
-# Set emails
-pulumi config set sourceEmail sender@example.com
-pulumi config set destinationEmail receiver@example.com
-
-# Set allowed origins (JSON format)
-pulumi config set --path allowedOrigins '["https://example.com", "http://localhost:3000"]'
-```
+1.  Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Open `.env` and fill in your values.
+3.  If you are using [Granted](https://granted.dev/) to assume AWS roles, you can run:
+    ```bash
+    assume <your-profile-name>
+    # The AWS credentials will be automatically injected into your session
+    ```
 
 ## 5. Deployment
 
 Follow these steps to build the code and deploy the infrastructure:
 
-1. **Build the Lambda Source**:
-   From the **project root**, run the build script to compile TypeScript to JavaScript in the `dist/` folder:
+1.  **Build the Lambda Source**:
+    From the **project root**, run the build script to compile TypeScript to JavaScript in the `dist/` folder:
 
-   ```bash
-   pnpm build
-   ```
+    ```bash
+    pnpm build
+    ```
 
-2. **Deploy with Pulumi**:
-   From the `infra/` directory, run:
-   ```bash
-   pulumi up
-   ```
-   Review the plan and select `yes` to perform the deployment.
+2.  **Deploy with Pulumi**:
+    From the root, you can run Pulumi while pointing to the infrastructure directory:
+    ```bash
+    pulumi up --cwd src/infra
+    ```
+    Review the plan and select `yes` to perform the deployment.
 
 ## 6. Post-Deployment Steps
 
@@ -113,7 +108,17 @@ Follow these steps to build the code and deploy the infrastructure:
    Once `pulumi up` completes, it will output the `apiUrl`. You will need this for your frontend integration (see
    `doc/how-to/web-setup.md`).
 
-3. **SES Sandbox**:
+3. **Associate WAF Manually (Required)**:
+   Due to a known AWS limitation with WAFv2 and API Gateway V2 (HTTP) associations via infrastructure-as-code, you must manually link the Web ACL to your API Stage:
+   1. Open the **WAF & Shield** console in your AWS account.
+   2. Select the Web ACL created by this project (prefixed with your `PROJECT_NAME`).
+   3. Navigate to the **Associated AWS resources** tab.
+   4. Click **Add AWS resources**.
+   5. Choose **API Gateway REST API** (HTTP APIs are grouped here for WAF associations).
+   6. Select your API and the corresponding stage (e.g., `dev`).
+   7. Click **Add**.
+
+4. **SES Sandbox**:
    New AWS accounts are placed in the "SES Sandbox" by default. In the sandbox, you can only send emails to verified
    addresses. If you want to send emails to any user-provided email (as a confirmation), you must request
    a [limit increase](https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html) to move out of the
@@ -122,9 +127,11 @@ Follow these steps to build the code and deploy the infrastructure:
 
 ## 7. Maintenance & Updates
 
-- **Code Changes**: If you modify `src/index.ts`, run `pnpm build` and then `pulumi up` from the `infra` directory.
-- **Infrastructure Changes**: Modify the files in `infra/` and run `pulumi up`.
+- **Code Changes**: If you modify `src/lambda/contact/index.ts`, run `pnpm build` and then `pulumi up --cwd src/infra`.
+- **Infrastructure Changes**: Modify the files in `src/infra/` and run `pulumi up --cwd src/infra`.
 - **Destroying Resources**: To tear down the infrastructure and stop costs:
-  ```bash
-  pulumi destroy
-  ```
+  1. (Optional) Apply the `yours-truly-email-destroy-policy.json` to your deployment role if your current permissions are insufficient for deletion.
+  2. Run the destroy command:
+     ```bash
+     pulumi destroy --cwd src/infra
+     ```
