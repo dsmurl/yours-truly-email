@@ -108,15 +108,17 @@ Follow these steps to build the code and deploy the infrastructure:
    Once `pulumi up` completes, it will output the `apiUrl`. You will need this for your frontend integration (see
    `doc/how-to/web-setup.md`).
 
-3. **Associate WAF Manually (Required)**:
-   Due to a known AWS limitation with WAFv2 and API Gateway V2 (HTTP) associations via infrastructure-as-code, you must manually link the Web ACL to your API Stage:
-   1. Open the **WAF & Shield** console in your AWS account.
-   2. Select the Web ACL created by this project (prefixed with your `PROJECT_NAME`).
-   3. Navigate to the **Associated AWS resources** tab.
-   4. Click **Add AWS resources**.
-   5. Choose **API Gateway REST API** (HTTP APIs are grouped here for WAF associations).
-   6. Select your API and the corresponding stage (e.g., `dev`).
-   7. Click **Add**.
+3. **WAF Association**:
+   The infrastructure automatically attempts to link your API Gateway Stage to the WAF Web ACL. 
+
+   - **Troubleshooting "Invalid ARN"**: If you see a `WAFInvalidParameterException: The ARN isn't valid`, this is likely due to AWS caching a "shorthand" ARN from a previous failed attempt. 
+   - **Fix**: The best way to resolve this is to perform a clean deployment:
+     ```bash
+     pnpm build
+     pulumi destroy --cwd src/infra
+     pulumi up --cwd src/infra
+     ```
+   - **Manual Verification**: In the AWS Console, your API (HTTP API) will be listed under **WAF & Shield** > **Web ACLs** > [Your ACL] > **Associated AWS resources** > **Add AWS resources** > **API Gateway REST API**.
 
 4. **SES Sandbox**:
    New AWS accounts are placed in the "SES Sandbox" by default. In the sandbox, you can only send emails to verified

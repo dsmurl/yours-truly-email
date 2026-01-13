@@ -3,123 +3,155 @@ import * as pulumi from '@pulumi/pulumi';
 import * as config from './config';
 import { contactFormLambda } from './lambda';
 
-// 1. WAF Web ACL
-const webAcl = new aws.wafv2.WebAcl(config.prefixName('waf'), {
-  scope: 'REGIONAL',
-  defaultAction: { allow: {} },
-  rules: [
-    {
-      name: 'RateLimit',
-      priority: 1,
-      action: { block: {} },
-      statement: {
-        rateBasedStatement: {
-          limit: config.wafRateLimit,
-          aggregateKeyType: 'IP',
-        },
-      },
-      visibilityConfig: {
-        cloudwatchMetricsEnabled: true,
-        metricName: 'RateLimit',
-        sampledRequestsEnabled: true,
-      },
-    },
-    {
-      name: 'CaptchaOnContact',
-      priority: 2,
-      action: { captcha: {} },
-      statement: {
-        byteMatchStatement: {
-          searchString: '/contact',
-          fieldToMatch: { uriPath: {} },
-          textTransformations: [{ priority: 0, type: 'NONE' }],
-          positionalConstraint: 'EXACTLY',
-        },
-      },
-      visibilityConfig: {
-        cloudwatchMetricsEnabled: true,
-        metricName: 'CaptchaOnContact',
-        sampledRequestsEnabled: true,
-      },
-    },
-    {
-      name: 'AWSManagedRulesCommonRuleSet',
-      priority: 3,
-      overrideAction: { none: {} },
-      statement: {
-        managedRuleGroupStatement: {
-          vendorName: 'AWS',
-          name: 'AWSManagedRulesCommonRuleSet',
-        },
-      },
-      visibilityConfig: {
-        cloudwatchMetricsEnabled: true,
-        metricName: 'AWSManagedRulesCommonRuleSet',
-        sampledRequestsEnabled: true,
-      },
-    },
-  ],
-  visibilityConfig: {
-    cloudwatchMetricsEnabled: true,
-    metricName: config.prefixName('waf-metrics'),
-    sampledRequestsEnabled: true,
-  },
+// 0. Provider Configuration
+// Using an explicit provider ensures that Pulumi is 100% aligned with the target region,
+// which often resolves "Invalid ARN" or "Resource not found" errors in WAFv2.
+const provider = new aws.Provider('aws-provider', {
+  region: config.awsRegion as aws.Region,
 });
+
+// 1. WAF Web ACL
+const webAcl = new aws.wafv2.WebAcl(
+  config.prefixName('waf'),
+  {
+    scope: 'REGIONAL',
+    defaultAction: { allow: {} },
+    rules: [
+      {
+        name: 'RateLimit',
+        priority: 1,
+        action: { block: {} },
+        statement: {
+          rateBasedStatement: {
+            limit: config.wafRateLimit,
+            aggregateKeyType: 'IP',
+          },
+        },
+        visibilityConfig: {
+          cloudwatchMetricsEnabled: true,
+          metricName: 'RateLimit',
+          sampledRequestsEnabled: true,
+        },
+      },
+      {
+        name: 'CaptchaOnContact',
+        priority: 2,
+        action: { captcha: {} },
+        statement: {
+          byteMatchStatement: {
+            searchString: '/contact',
+            fieldToMatch: { uriPath: {} },
+            textTransformations: [{ priority: 0, type: 'NONE' }],
+            positionalConstraint: 'EXACTLY',
+          },
+        },
+        visibilityConfig: {
+          cloudwatchMetricsEnabled: true,
+          metricName: 'CaptchaOnContact',
+          sampledRequestsEnabled: true,
+        },
+      },
+      {
+        name: 'AWSManagedRulesCommonRuleSet',
+        priority: 3,
+        overrideAction: { none: {} },
+        statement: {
+          managedRuleGroupStatement: {
+            vendorName: 'AWS',
+            name: 'AWSManagedRulesCommonRuleSet',
+          },
+        },
+        visibilityConfig: {
+          cloudwatchMetricsEnabled: true,
+          metricName: 'AWSManagedRulesCommonRuleSet',
+          sampledRequestsEnabled: true,
+        },
+      },
+    ],
+    visibilityConfig: {
+      cloudwatchMetricsEnabled: true,
+      metricName: config.prefixName('waf-metrics'),
+      sampledRequestsEnabled: true,
+    },
+  },
+  { provider },
+);
 
 // 2. API Gateway (HTTP API)
-const api = new aws.apigatewayv2.Api(config.prefixName('api'), {
-  protocolType: 'HTTP',
-  corsConfiguration: {
-    allowOrigins: config.allowedOrigins,
-    allowMethods: ['POST', 'OPTIONS'],
-    allowHeaders: ['content-type', 'x-amzn-waf-token'],
+const api = new aws.apigatewayv2.Api(
+  config.prefixName('api'),
+  {
+    protocolType: 'HTTP',
+    corsConfiguration: {
+      allowOrigins: config.allowedOrigins,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['content-type', 'x-amzn-waf-token'],
+    },
   },
-});
+  { provider },
+);
 
-const integration = new aws.apigatewayv2.Integration(config.prefixName('integration'), {
-  apiId: api.id,
-  integrationType: 'AWS_PROXY',
-  integrationUri: contactFormLambda.arn,
-  payloadFormatVersion: '2.0',
-});
-
-const route = new aws.apigatewayv2.Route(config.prefixName('route'), {
-  apiId: api.id,
-  routeKey: 'POST /contact',
-  target: pulumi.interpolate`integrations/${integration.id}`,
-});
-
-const stage = new aws.apigatewayv2.Stage(config.prefixName('stage'), {
-  apiId: api.id,
-  name: config.pulumiStack, // Use the stack name (e.g., 'dev') as the stage name
-  autoDeploy: true,
-  defaultRouteSettings: {
-    throttlingBurstLimit: config.apiThrottlingBurst,
-    throttlingRateLimit: config.apiThrottlingRate,
+const integration = new aws.apigatewayv2.Integration(
+  config.prefixName('integration'),
+  {
+    apiId: api.id,
+    integrationType: 'AWS_PROXY',
+    integrationUri: contactFormLambda.arn,
+    payloadFormatVersion: '2.0',
   },
-});
+  { provider },
+);
 
-// 3. Attach WAF to API Stage
-const current = pulumi.output(aws.getCallerIdentity({}));
-const region = pulumi.output(aws.getRegion({}));
+const route = new aws.apigatewayv2.Route(
+  config.prefixName('route'),
+  {
+    apiId: api.id,
+    routeKey: 'POST /contact',
+    target: pulumi.interpolate`integrations/${integration.id}`,
+  },
+  { provider },
+);
 
-/*
-const wafAssociation = new aws.wafv2.WebAclAssociation(config.prefixName('waf-assoc'), {
-  // FINAL FIX for WAFv2 and API Gateway V2 (HTTP APIs):
-  // For HTTP APIs, the ARN MUST include the Account ID when associating with WAFv2,
-  // AND it MUST NOT have the leading slash after the account ID.
-  // Format: arn:aws:apigateway:{region}:{account-id}:apis/{api-id}/stages/{stage-name}
-  resourceArn: pulumi.interpolate`arn:aws:apigateway:${region.name}:${current.accountId}:apis/${api.id}/stages/${stage.name}`,
-  webAclArn: webAcl.arn,
-}, { dependsOn: [webAcl, stage] });
-*/
+const stage = new aws.apigatewayv2.Stage(
+  config.prefixName('stage'),
+  {
+    apiId: api.id,
+    name: config.pulumiStack, // Use the stack name (e.g., 'dev') as the stage name
+    autoDeploy: true,
+    defaultRouteSettings: {
+      throttlingBurstLimit: config.apiThrottlingBurst,
+      throttlingRateLimit: config.apiThrottlingRate,
+    },
+  },
+  { provider },
+);
+
+// 3. WAF Association
+// Dynamically retrieve account and region to build a fully qualified ARN
+const current = pulumi.output(aws.getCallerIdentity({}, { provider }));
+const region = pulumi.output(aws.getRegion({}, { provider }));
+
+const wafAssociation = new aws.wafv2.WebAclAssociation(
+  config.prefixName('waf-assoc'),
+  {
+    // The "Triple Crown" ARN format: Account ID + Leading Slash + Alphanumeric Stage
+    // This is the most exhaustive format for Regional WAFv2 + HTTP API Gateway
+    resourceArn: pulumi.interpolate`arn:aws:apigateway:${region.name}:${current.accountId}:/apis/${api.id}/stages/${stage.name}`,
+    webAclArn: webAcl.arn,
+  },
+  { dependsOn: [webAcl, stage], provider },
+);
 
 // 4. Lambda Permission
-new aws.lambda.Permission(config.prefixName('api-permission'), {
-  action: 'lambda:InvokeFunction',
-  function: contactFormLambda.name,
-  principal: 'apigateway.amazonaws.com',
-  sourceArn: pulumi.interpolate`${api.executionArn}/*/*`,
-});
+new aws.lambda.Permission(
+  config.prefixName('api-permission'),
+  {
+    action: 'lambda:InvokeFunction',
+    function: contactFormLambda.name,
+    principal: 'apigateway.amazonaws.com',
+    sourceArn: pulumi.interpolate`${api.executionArn}/*/*`,
+  },
+  { provider },
+);
 
 export const apiUrl = pulumi.interpolate`${api.apiEndpoint}/${stage.name}`;
